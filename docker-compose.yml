@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:6.0
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - misinfo-network
+
+  backend:
+    build: ./backend
+    depends_on:
+      - mongo
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/misinfo_db
+      - NEWSAPI_KEY=${NEWSAPI_KEY}
+      - GOOGLE_CSE_API_KEY=${GOOGLE_CSE_API_KEY}
+      - GOOGLE_CSE_ID=${GOOGLE_CSE_ID}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
+      - SCHED_RUN_INTERVAL_MIN=${SCHED_RUN_INTERVAL_MIN:-10}
+      - JWT_SECRET=${JWT_SECRET:-devsecret}
+    networks:
+      - misinfo-network
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+    networks:
+      - misinfo-network
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
+
+networks:
+  misinfo-network:
+    driver: bridge
