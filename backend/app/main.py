@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from .api.routes import router as api_router
 from .agents.fetcher import fetch_news
 from .agents.claim_extractor import run_extractor
@@ -10,6 +11,15 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import asyncio
 
 app = FastAPI(title='Misinfo Agentic API')
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(api_router, prefix='/api')
 
 @app.on_event('startup')

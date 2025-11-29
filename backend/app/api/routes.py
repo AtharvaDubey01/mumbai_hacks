@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from ..db import raw_items, claims, verifications
 from ..utils import now_iso
+from ..agents.verifier import verify_claim_text
+from .schemas import VerifyRequest
 from bson import ObjectId
 from typing import List
 
@@ -42,4 +44,10 @@ async def manual_verify(claim_id: str):
         raise HTTPException(404, 'Claim not found')
     # placeholder: set status
     await claims.update_one({'_id': ObjectId(claim_id)}, {'$set': {'status': 'queued_for_manual'}})
+    await claims.update_one({'_id': ObjectId(claim_id)}, {'$set': {'status': 'queued_for_manual'}})
     return {'ok': True}
+
+@router.post('/verify-text')
+async def verify_text_endpoint(req: VerifyRequest):
+    result = await verify_claim_text(req.text)
+    return result

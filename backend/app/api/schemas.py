@@ -20,3 +20,6 @@ class Verification(BaseModel):
     score: float
     evidence: Optional[list] = []
     checked_at: Optional[str]
+
+class VerifyRequest(BaseModel):
+    text: str

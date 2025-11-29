@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react'
-import { getClaims, getVerifications, getItems } from './api'
+import { getClaims, getVerifications, getItems, verifyText } from './api'
 
 export default function App() {
     const [claims, setClaims] = useState([])
     const [vers, setVers] = useState([])
     const [items, setItems] = useState([])
+
     const [loading, setLoading] = useState(true)
+    const [manualText, setManualText] = useState('')
+    const [manualResult, setManualResult] = useState(null)
+    const [verifying, setVerifying] = useState(false)
 
     useEffect(() => {
         fetchAll()
@@ -24,6 +28,19 @@ export default function App() {
             console.error('Error fetching data:', err)
             setLoading(false)
         }
+    }
+
+    async function handleVerify() {
+        if (!manualText.trim()) return
+        setVerifying(true)
+        setManualResult(null)
+        try {
+            const res = await verifyText(manualText)
+            setManualResult(res)
+        } catch (err) {
+            console.error('Verification failed:', err)
+        }
+        setVerifying(false)
     }
 
     const getStatusColor = (status) => {
@@ -70,6 +87,88 @@ export default function App() {
                         </div>
                     </div>
                 </header>
+
+                {/* Manual Verification Section */}
+                <section className="mb-12 bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 shadow-2xl max-w-3xl mx-auto">
+                    <h2 className="text-2xl font-bold mb-6 text-blue-300 flex items-center gap-2">
+                        <span>🕵️</span> Check a Fact
+                    </h2>
+                    <div className="flex gap-4 mb-6">
+                        <textarea
+                            className="flex-1 bg-gray-900/50 border border-gray-700 rounded-xl p-4 text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none h-24"
+                            placeholder="Enter a claim to verify (e.g., 'The earth is flat')..."
+                            value={manualText}
+                            onChange={(e) => setManualText(e.target.value)}
+                        />
+                        <button
+                            onClick={handleVerify}
+                            disabled={verifying || !manualText.trim()}
+                            className="bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white px-8 rounded-xl font-bold transition-all duration-300 flex items-center justify-center min-w-[120px]"
+                        >
+                            {verifying ? (
+                                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white"></div>
+                            ) : (
+                                'Verify'
+                            )}
+                        </button>
+                    </div>
+
+                    {manualResult && (
+                        <div className="bg-gray-900/80 rounded-xl p-6 border border-gray-700 animate-fade-in">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-4 h-4 rounded-full ${getVerdictColor(manualResult.verdict)}`}></div>
+                                    <span className={`text-xl font-bold ${manualResult.verdict === 'false' ? 'text-red-400' : manualResult.verdict === 'true' ? 'text-green-400' : 'text-yellow-400'}`}>
+                                        {manualResult.verdict.toUpperCase()}
+                                    </span>
+                                </div>
+                                <span className="text-gray-400">
+                                    Confidence: <span className="text-blue-300 font-bold">{(manualResult.score * 100).toFixed(0)}%</span>
+                                </span>
+                            </div>
+
+                            {manualResult.summary && (
+                                <div className="mb-4 bg-blue-900/30 p-4 rounded-lg border border-blue-500/30">
+                                    <div className="text-sm text-blue-300 font-bold mb-1">Summary:</div>
+                                    <p className="text-gray-200 text-sm leading-relaxed">
+                                        {manualResult.summary}
+                                    </p>
+                                </div>
+                            )}
+
+                            {manualResult.reasons && manualResult.reasons.length > 0 && (
+                                <div className="mb-4">
+                                    <div className="text-sm text-gray-500 mb-2">Analysis:</div>
+                                    <ul className="list-disc list-inside text-gray-300 space-y-1">
+                                        {manualResult.reasons.map((r, i) => (
+                                            <li key={i}>{r}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {manualResult.evidence && manualResult.evidence.length > 0 && (
+                                <div>
+                                    <div className="text-sm text-gray-500 mb-2">Evidence:</div>
+                                    <div className="space-y-2">
+                                        {manualResult.evidence.slice(0, 3).map((e, idx) => (
+                                            <a
+                                                key={idx}
+                                                href={e.link}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="block bg-gray-800 p-3 rounded-lg hover:bg-gray-700 transition-colors border border-gray-700 hover:border-blue-500/30"
+                                            >
+                                                <div className="text-blue-400 font-medium text-sm line-clamp-1">{e.title}</div>
+                                                <div className="text-gray-500 text-xs line-clamp-1 mt-1">{e.snippet}</div>
+                                            </a>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </section>
 
                 {loading ? (
                     <div className="text-center py-20">

@@ -15,7 +15,7 @@ build/
 .vite/
 
 # Environment
-.env
+# .env
 .env.local
 
 # IDEs
