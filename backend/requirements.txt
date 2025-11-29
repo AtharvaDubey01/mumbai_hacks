@@ -5,7 +5,7 @@ pydantic==1.10.11
 aiohttp==3.8.4
 requests==2.31.0
 transformers==4.40.0
-torch==2.2.0
+torch==2.1.2
 python-dotenv==1.0.0
 apscheduler==3.10.1
 httpx==0.24.0
